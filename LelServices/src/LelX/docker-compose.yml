@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+  lelx:
+    image: user/lelx${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80"

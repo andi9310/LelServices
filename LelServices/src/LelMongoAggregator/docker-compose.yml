@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  lelmongoaggregator:
+    image: user/lelmongoaggregator${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile

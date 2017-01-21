@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+  lelapi:
+    image: user/lelapi${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80"

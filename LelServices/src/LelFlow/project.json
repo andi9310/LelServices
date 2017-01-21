@@ -5,14 +5,20 @@
     "debugType": "portable"
   },
   "dependencies": {
+    "LelCommon": "1.0.0-*",
+    "Microsoft.AspNet.WebApi.Client": "5.2.3",
     "Microsoft.NETCore.App": {
       "type": "platform",
       "version": "1.0.1"
-    }
+    },
+    "System.Runtime.Serialization.Xml": "4.3.0"
   },
   "frameworks": {
     "netcoreapp1.0": {
-      "imports": "dnxcore50"
+      "imports": [
+        "dotnet5.6",
+        "portable-net45+win8"
+      ]
     }
   },
   "publishOptions": {

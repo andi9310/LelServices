@@ -5,6 +5,7 @@
     "debugType": "portable"
   },
   "dependencies": {
+    "Consul": "0.7.2.1",
     "LelCommon": "1.0.0-*",
     "Microsoft.AspNet.WebApi.Client": "5.2.3",
     "Microsoft.NETCore.App": {

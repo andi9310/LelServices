@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
+using Consul;
 
 namespace LelFlow
 {
@@ -15,14 +17,45 @@ namespace LelFlow
         private static readonly Random Generator = new Random();
         public static void Main(string[] args)
         {
-            BuildClient.DefaultRequestHeaders.Accept.Clear();
-            BuildClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            while (true)
+            Main().Wait();
+        }
+
+        private static async Task Main()
+        {
+            using (var client = new ConsulClient(configuration => configuration.Address = new Uri("http://localhost:8500")))
             {
-                ProcessBuild().Wait();
-                System.Threading.Thread.Sleep(5000);
+
+                const string keyName = "lel/lel_flow_lock";
+
+                var lockOptions = new LockOptions(keyName)
+                {
+                    SessionName = "lel_lock_session",
+                    SessionTTL = TimeSpan.FromSeconds(10)
+                };
+                var l = client.CreateLock(lockOptions);
+                await l.Acquire(CancellationToken.None);
+                try
+                {
+                    if (!l.IsHeld)
+                    {
+                        Console.WriteLine("dziwne");
+                        return;
+                    }
+                    Console.WriteLine("mam locka");
+
+                    BuildClient.DefaultRequestHeaders.Accept.Clear();
+                    BuildClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    while (true)
+                    {
+                        ProcessBuild().Wait();
+                        Thread.Sleep(5000);
+                    }
+                }
+                finally
+                {
+                    await l.Release(CancellationToken.None);
+                }
             }
-            // ReSharper disable once FunctionNeverReturns
         }
 
         private static async Task ProcessBuild()

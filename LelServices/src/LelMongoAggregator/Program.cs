@@ -18,7 +18,7 @@ namespace LelMongoAggregator
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {
-                _channel.BasicQos(0, 20, false);
+                _channel.BasicQos(0, 100, false);
                 _channel.QueueDeclare("lel_stored_mongo_agg", true, false, false, null);
                 _channel.ExchangeDeclare("lel_stored", "fanout");
                 _channel.QueueBind("lel_stored_mongo_agg", "lel_stored", "");
@@ -37,12 +37,11 @@ namespace LelMongoAggregator
         private static void OnMessage(object model, BasicDeliverEventArgs ea)
         {
             var result = JsonConvert.DeserializeObject<Result>(Encoding.UTF8.GetString(ea.Body));
-            var collection = Database.GetCollection<MongoAggregation>("lel_aggregations");
             var filterBuilder = Builders<MongoAggregation>.Filter;
-            var filter = filterBuilder.Eq("Label", result.Label) & filterBuilder.Eq("Configuration", result.Configuration);
-            var updateBuilder = Builders<MongoAggregation>.Update;
-            var update = updateBuilder.Inc(result.Status, 1);
-            collection.FindOneAndUpdate(filter, update, new FindOneAndUpdateOptions<MongoAggregation, MongoAggregation> { IsUpsert = true });
+            Database.GetCollection<MongoAggregation>("lel_aggregations").FindOneAndUpdate(
+                filterBuilder.Eq("Label", result.Label) & filterBuilder.Eq("Configuration", result.Configuration),
+                Builders<MongoAggregation>.Update.Inc(result.Status, 1),
+                new FindOneAndUpdateOptions<MongoAggregation, MongoAggregation> { IsUpsert = true });
             _channel.BasicAck(ea.DeliveryTag, false);
         }
     }

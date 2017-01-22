@@ -18,7 +18,7 @@ namespace LelSqlAggregator
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {
-                _channel.BasicQos(0, 20, false);
+                _channel.BasicQos(0, 100, false);
                 _channel.QueueDeclare("lel_stored_sql_agg", true, false, false, null);
                 _channel.ExchangeDeclare("lel_stored", "fanout");
                 _channel.QueueBind("lel_stored_sql_agg", "lel_stored", "");
@@ -54,8 +54,7 @@ namespace LelSqlAggregator
                     context.Aggregations.Add(aggregation);
                 }
                 var status = aggregation.GetType().GetProperty(result.Status);
-                var count = (int)status.GetValue(aggregation, null);
-                status.SetValue(aggregation, count + 1);
+                status.SetValue(aggregation, (int)status.GetValue(aggregation, null) + 1);
                 context.SaveChanges();
             }
             _channel.BasicAck(ea.DeliveryTag, false);

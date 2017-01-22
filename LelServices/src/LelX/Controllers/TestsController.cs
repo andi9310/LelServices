@@ -12,7 +12,7 @@ namespace LelX.Controllers
     {
         private static readonly Random Generator = new Random();
 
-        private static readonly string[] Statuses = {"Pass", "Fail", "Error"};
+        private static readonly string[] Statuses = { "Pass", "Fail", "Error" };
         // POST api/tests
         [HttpPost]
         public void Post([FromBody]BuildWithTests build)
@@ -21,10 +21,19 @@ namespace LelX.Controllers
             {
                 foreach (var test in build.Tests)
                 {
-                    var result = new Result { Configuration = build.Configuration, Label = build.Label, Command = test.Command, Status = Statuses[Generator.Next(Statuses.Length)] };
-                    var message = JsonConvert.SerializeObject(result);
-                    var body = Encoding.UTF8.GetBytes(message);
-                    channel.BasicPublish("", "lel_new", null, body);
+                    channel.BasicPublish("", "lel_new", null,
+                        Encoding.UTF8.GetBytes(
+                            JsonConvert.SerializeObject(
+                                new Result
+                                {
+                                    Configuration = build.Configuration,
+                                    Label = build.Label,
+                                    Command = test.Command,
+                                    Status = Statuses[Generator.Next(Statuses.Length)]
+                                }
+                            )
+                        )
+                   );
                 }
             }
         }

@@ -30,15 +30,8 @@ namespace LelFlow
             var response = await BuildClient.GetAsync($"api/builds/{Generator.Next(100)}/last");
             if (response.IsSuccessStatusCode)
             {
-                var build = await response.Content.ReadAsAsync<Build>();
-                var buildwithTests = AddTestsToBuild(build);
-                SendToExecution(buildwithTests);
+                await RunnerClient.PostAsJsonAsync("api/tests", AddTestsToBuild(await response.Content.ReadAsAsync<Build>()));
             }
-        }
-
-        private static void SendToExecution(BuildWithTests build)
-        {
-            RunnerClient.PostAsJsonAsync("api/tests", build);
         }
 
         private static BuildWithTests AddTestsToBuild(Build build)

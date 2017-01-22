@@ -19,6 +19,7 @@ namespace LelCommon
         public IEnumerable<Test> Tests { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class Result : Build
     {
         public string Command { get; set; }

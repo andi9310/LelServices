@@ -18,7 +18,7 @@ namespace LelConsumer
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {
-                _channel.BasicQos(0, 20, false);
+                _channel.BasicQos(0, 100, false);
                 _channel.QueueDeclare("lel_new", true, false, false, null);
                 _channel.ExchangeDeclare("lel_stored", "fanout");
 
@@ -35,9 +35,7 @@ namespace LelConsumer
 
         private static void OnMessage(object model, BasicDeliverEventArgs ea)
         {
-            var result = JsonConvert.DeserializeObject<Result>(Encoding.UTF8.GetString(ea.Body));
-            var collection = Database.GetCollection<Result>("lels");
-            collection.InsertOne(result);
+            Database.GetCollection<Result>("lels").InsertOne(JsonConvert.DeserializeObject<Result>(Encoding.UTF8.GetString(ea.Body)));
             _channel.BasicPublish("lel_stored", "lel_stored", null, ea.Body);
             _channel.BasicAck(ea.DeliveryTag, false);
         }

@@ -11,7 +11,7 @@ namespace LelFlow
     public class Program
     {
         private static readonly HttpClient BuildClient = new HttpClient { BaseAddress = new Uri("http://localhost:3296/") };
-        private static readonly HttpClient RunnerClient = new HttpClient { BaseAddress = new Uri("http://localhost:3296/") };
+        private static readonly HttpClient RunnerClient = new HttpClient { BaseAddress = new Uri("http://localhost:3318/") };
         private static readonly Random Generator = new Random();
         public static void Main(string[] args)
         {
@@ -22,6 +22,7 @@ namespace LelFlow
                 ProcessBuild().Wait();
                 System.Threading.Thread.Sleep(5000);
             }
+            // ReSharper disable once FunctionNeverReturns
         }
 
         private static async Task ProcessBuild()
@@ -37,7 +38,7 @@ namespace LelFlow
 
         private static void SendToExecution(BuildWithTests build)
         {
-            throw new NotImplementedException();
+            RunnerClient.PostAsJsonAsync("api/tests", build);
         }
 
         private static BuildWithTests AddTestsToBuild(Build build)

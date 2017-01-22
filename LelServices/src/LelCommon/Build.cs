@@ -18,4 +18,12 @@ namespace LelCommon
         public IEnumerable<Test> Tests { get; set; }
 
     }
+
+    public class Result : Build
+    {
+        public string Command { get; set; }
+        public int Status { get; set; }
+    }
+
+
 }

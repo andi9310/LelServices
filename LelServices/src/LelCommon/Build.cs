@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace LelCommon
 {
@@ -16,13 +17,20 @@ namespace LelCommon
     public class BuildWithTests : Build
     {
         public IEnumerable<Test> Tests { get; set; }
-
     }
 
     public class Result : Build
     {
         public string Command { get; set; }
-        public int Status { get; set; }
+        public string Status { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class MongoAggregation : Build
+    {
+        public int Pass { get; set; }
+        public int Fail { get; set; }
+        public int Error { get; set; }
     }
 
 

@@ -45,7 +45,7 @@ namespace LelFlow
         {
             var tests = new List<Test>();
             var generator = new Random(build.Configuration);
-            for (var i = 0; i < build.Configuration * 1000; i++)
+            for (var i = 0; i < build.Configuration * 100; i++)
             {
                 tests.Add(new Test() { Command = RandomString(generator) });
             }

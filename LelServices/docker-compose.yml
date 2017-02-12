@@ -1,0 +1,99 @@
+version: '3'
+services:
+  lelbuild:
+    image: user/lelbuild:dev
+    ports:
+      - "80"
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelBuild
+      dockerfile: Dockerfile
+  lelapi:
+    image: user/lelapi:dev
+    ports:
+      - "80"
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - mssql-server-linux
+      - mongo
+    build:
+      context: src/LelApi
+      dockerfile: Dockerfile
+  lelconsumer:
+    image: user/lelconsumer:dev
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - mongo
+      - rabbitmq
+  lelflow:
+    image: user/lelflow:dev
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - lelbuild
+      - lelx
+      - consul
+  lelmongoaggregator:
+    image: user/lelmongoaggregator:dev
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - mongo
+      - rabbitmq
+  lelsqlaggregator:
+    image: user/lelsqlaggregator:dev
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - mssql-server-linux
+      - rabbitmq
+  lelx:
+    image: user/lelx:dev
+    labels:
+      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
+    volumes:
+      - ~/clrdbg:/clrdbg:ro
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+     - "15672"
+     - "5672"
+  mssql-server-linux:
+    image: microsoft/mssql-server-linux
+    ports:
+    - "1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Elo_benc1!"
+  mongo:
+    image: mongo
+    ports:
+     - "27017"
+  consul:
+    image: consul
+    ports:
+     - "8500"

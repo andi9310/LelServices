@@ -3,7 +3,7 @@ services:
   lelbuild:
     image: user/lelbuild:dev
     ports:
-      - "80"
+      - "8080:80"
     labels:
       - "com.microsoft.visualstudio.targetoperatingsystem=linux"
     volumes:
@@ -24,6 +24,9 @@ services:
     depends_on:
       - mssql-server-linux
       - mongo
+    links:
+      - mssql-server-linux:mssql
+      - mongo
     build:
       context: src/LelApi
       dockerfile: Dockerfile
@@ -37,6 +40,9 @@ services:
     depends_on:
       - mongo
       - rabbitmq
+    links:
+      - mongo
+      - rabbitmq
   lelflow:
     image: user/lelflow:dev
     labels:
@@ -48,6 +54,10 @@ services:
       - lelbuild
       - lelx
       - consul
+    links:
+      - lelbuild
+      - lelx
+      - consul  
   lelmongoaggregator:
     image: user/lelmongoaggregator:dev
     labels:
@@ -56,6 +66,9 @@ services:
       - ~/clrdbg:/clrdbg:ro
     entrypoint: tail -f /dev/null
     depends_on:
+      - mongo
+      - rabbitmq
+    links:
       - mongo
       - rabbitmq
   lelsqlaggregator:
@@ -68,6 +81,9 @@ services:
     depends_on:
       - mssql-server-linux
       - rabbitmq
+    links:
+      - mssql-server-linux:mssql
+      - rabbitmq
   lelx:
     image: user/lelx:dev
     labels:
@@ -77,10 +93,12 @@ services:
     entrypoint: tail -f /dev/null
     depends_on:
       - rabbitmq
+    links:
+      - rabbitmq
   rabbitmq:
     image: rabbitmq:management
     ports:
-     - "15672"
+     - "8005:15672"
      - "5672"
   mssql-server-linux:
     image: microsoft/mssql-server-linux

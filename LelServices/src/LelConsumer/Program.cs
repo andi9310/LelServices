@@ -9,12 +9,12 @@ namespace LelConsumer
 {
     public class Program
     {
-        private static readonly IMongoClient MongoClient = new MongoClient("mongodb://localhost:8007/?maxPoolSize=555");
+        private static readonly IMongoClient MongoClient = new MongoClient("mongodb://mongo:27017/?maxPoolSize=555");
         private static readonly IMongoDatabase Database = MongoClient.GetDatabase("lel");
         private static IModel _channel;
         public static void Main(string[] args)
         {
-            var factory = new ConnectionFactory { HostName = "localhost", Port = 8006, UserName = "guest", Password = "guest" };
+            var factory = new ConnectionFactory { HostName = "rabbitmq", Port = 5672, UserName = "guest", Password = "guest" };
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {

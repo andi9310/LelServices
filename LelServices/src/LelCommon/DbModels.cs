@@ -13,7 +13,7 @@ namespace LelCommon
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=localhost;Database=lel_db;User Id=sa;Password=Elo_benc1!; ");
+            optionsBuilder.UseSqlServer("Server=mssql;Database=lel_db;User Id=sa;Password=Elo_benc1!; ");
         }
     }
 

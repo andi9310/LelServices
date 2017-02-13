@@ -6,7 +6,7 @@ namespace LelX
 {
     public class Program
     {
-        private static readonly ConnectionFactory Factory = new ConnectionFactory { HostName = "localhost", Port = 8006, UserName = "guest", Password = "guest" };
+        private static readonly ConnectionFactory Factory = new ConnectionFactory { HostName = "rabbitmq", Port = 5672, UserName = "guest", Password = "guest" };
         public static IConnection Connection { get; } = Factory.CreateConnection();
 
         public static void Main(string[] args)

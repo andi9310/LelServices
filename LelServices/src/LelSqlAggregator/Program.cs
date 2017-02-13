@@ -14,7 +14,7 @@ namespace LelSqlAggregator
         private static IModel _channel;
         public static void Main(string[] args)
         {
-            var factory = new ConnectionFactory { HostName = "localhost", Port = 8006, UserName = "guest", Password = "guest" };
+            var factory = new ConnectionFactory { HostName = "rabbitmq", Port = 5672, UserName = "guest", Password = "guest" };
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {

@@ -12,8 +12,8 @@ namespace LelFlow
 {
     public class Program
     {
-        private static readonly HttpClient BuildClient = new HttpClient { BaseAddress = new Uri("http://localhost:3296/") };
-        private static readonly HttpClient RunnerClient = new HttpClient { BaseAddress = new Uri("http://localhost:3318/") };
+        private static readonly HttpClient BuildClient = new HttpClient { BaseAddress = new Uri("http://lelbuild/") };
+        private static readonly HttpClient RunnerClient = new HttpClient { BaseAddress = new Uri("http://lelx/") };
         private static readonly Random Generator = new Random();
         public static void Main(string[] args)
         {
@@ -22,7 +22,7 @@ namespace LelFlow
 
         private static async Task Main()
         {
-            using (var client = new ConsulClient(configuration => configuration.Address = new Uri("http://localhost:8500")))
+            using (var client = new ConsulClient(configuration => configuration.Address = new Uri("http://consul:8500")))
             {
 
                 const string keyName = "lel/lel_flow_lock";

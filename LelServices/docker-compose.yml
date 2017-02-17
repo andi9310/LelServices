@@ -1,26 +1,14 @@
 version: '3'
 services:
   lelbuild:
-    image: user/lelbuild:dev
-    ports:
-      - "8080:80"
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
-    build:
-      context: src/LelBuild
-      dockerfile: Dockerfile
-  lelapi:
-    image: user/lelapi:dev
     ports:
       - "80"
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelBuild
+      dockerfile: Dockerfile.prod
+  lelapi:
+    ports:
+      - "80"
     depends_on:
       - mssql-server-linux
       - mongo
@@ -29,14 +17,11 @@ services:
       - mongo
     build:
       context: src/LelApi
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
   lelconsumer:
-    image: user/lelconsumer:dev
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelConsumer
+      dockerfile: Dockerfile.prod
     depends_on:
       - mongo
       - rabbitmq
@@ -44,12 +29,9 @@ services:
       - mongo
       - rabbitmq
   lelflow:
-    image: user/lelflow:dev
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelFlow
+      dockerfile: Dockerfile.prod
     depends_on:
       - lelbuild
       - lelx
@@ -59,12 +41,9 @@ services:
       - lelx
       - consul  
   lelmongoaggregator:
-    image: user/lelmongoaggregator:dev
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelMongoAggregator
+      dockerfile: Dockerfile.prod
     depends_on:
       - mongo
       - rabbitmq
@@ -72,12 +51,9 @@ services:
       - mongo
       - rabbitmq
   lelsqlaggregator:
-    image: user/lelsqlaggregator:dev
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelSqlAggregator
+      dockerfile: Dockerfile.prod
     depends_on:
       - mssql-server-linux
       - rabbitmq
@@ -85,12 +61,11 @@ services:
       - mssql-server-linux:mssql
       - rabbitmq
   lelx:
-    image: user/lelx:dev
-    labels:
-      - "com.microsoft.visualstudio.targetoperatingsystem=linux"
-    volumes:
-      - ~/clrdbg:/clrdbg:ro
-    entrypoint: tail -f /dev/null
+    build:
+      context: src/LelX
+      dockerfile: Dockerfile.prod
+    ports:
+      - "80"
     depends_on:
       - rabbitmq
     links:

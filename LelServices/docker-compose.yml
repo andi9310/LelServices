@@ -74,7 +74,7 @@ services:
     image: rabbitmq:management
     ports:
      - "8005:15672"
-     - "5672"
+     - "8006:5672"
   mssql-server-linux:
     image: microsoft/mssql-server-linux
     ports:
@@ -85,7 +85,7 @@ services:
   mongo:
     image: mongo
     ports:
-     - "27017"
+     - "8007:27017"
   consul:
     image: consul
     ports:

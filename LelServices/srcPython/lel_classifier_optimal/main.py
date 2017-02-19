@@ -1,10 +1,18 @@
+import collections
 import functools
-import operator
 import json
 import math
+import operator
+from typing import NamedTuple
 
 import pika
 import pymongo
+
+
+class GaussianParams(NamedTuple):
+    mean: float
+    std_dev: float
+
 
 client = pymongo.MongoClient('localhost', 8007)
 collection = client.lel.lel_aggregations
@@ -13,19 +21,19 @@ PUBLISH_QUEUE_NAME = "lel_classified_optimal"
 BANNED_KEYS = {"Configuration", "_id", "Label"}
 
 
-def probability_density(num, std_dev, mean):
-    fact = std_dev * math.sqrt(2.0 * math.pi)
-    expo = (num - mean) * (num - mean) / (2.0 * std_dev * std_dev) if std_dev != 0.0 else None
-    return 1.0 if num == mean else 0.0 if std_dev == 0.0 else math.exp(-expo) / fact
+def probability_density(num: float, gaussian_params: GaussianParams):
+    fact = gaussian_params.std_dev * math.sqrt(2.0 * math.pi)
+    expo = (num - gaussian_params.mean) * (num - gaussian_params.mean) / (
+        2.0 * gaussian_params.std_dev * gaussian_params.std_dev
+    ) if gaussian_params.std_dev != 0.0 else None
+    return 1.0 if num == gaussian_params.mean else 0.0 if gaussian_params.std_dev == 0.0 else math.exp(-expo) / fact
 
 
 def calculate_mean_and_std_dev_for_attribute(attribute_name, class_items):
-    mean = sum(i[attribute_name] for i in class_items) / len(class_items)
-    return {
-        "mean": mean,
-        "std_dev": math.sqrt(
-            sum(i[attribute_name] * i[attribute_name] for i in class_items) / len(class_items) - mean * mean)
-    }
+    mean = sum(item[attribute_name] for item in class_items) / len(class_items)
+    return GaussianParams(mean, math.sqrt(
+        sum(item[attribute_name] * item[attribute_name] for item in class_items) / len(class_items) - mean * mean
+    ))
 
 
 def on_message(channel, method_frame, header_frame, body):
@@ -33,35 +41,38 @@ def on_message(channel, method_frame, header_frame, body):
     channel.queue_declare(publish_queue_name)
     item_to_classify = json.loads(body.decode("UTF-8"))
     items = list(collection.find())
-    items_by_class = {}
+
+    possible_attributes = {attribute for attribute in items[0].keys() if attribute not in BANNED_KEYS}
+
+    items_by_class = collections.defaultdict(list)
     for item in items:
-        config = item["Configuration"]
-        if config in items_by_class:
-            items_by_class[config].append({k: v for k, v in item.items() if k not in BANNED_KEYS})
-        else:
-            items_by_class[config] = [{k: v for k, v in item.items() if k not in BANNED_KEYS}]
+        items_by_class[item["Configuration"]].append({attribute: item[attribute] for attribute in possible_attributes})
 
     parameters_by_class = {
-        class_number: {attribute_name: calculate_mean_and_std_dev_for_attribute(attribute_name, class_items) for
-                       attribute_name in class_items[0].keys()} for class_number, class_items in items_by_class.items()}
+        class_number: {
+            attribute_name: calculate_mean_and_std_dev_for_attribute(attribute_name, class_items)
+            for attribute_name in possible_attributes
+        } for class_number, class_items in items_by_class.items()
+    }
 
-    probabilities_by_class = {}
+    global_params = {
+        attribute: calculate_mean_and_std_dev_for_attribute(attribute, items)
+        for attribute in possible_attributes
+    }
 
-    global_params = {k: calculate_mean_and_std_dev_for_attribute(k, items) for k in items[0].keys() if
-                     k not in BANNED_KEYS}
+    probabilities_by_class = {
+        class_number: functools.reduce(
+            operator.mul, (
+                probability_density(item_to_classify[attribute], value) *
+                (len(items_by_class[class_number]) / len(items)) /
+                probability_density(item_to_classify[attribute], global_params[attribute])
+                for attribute, value in class_parameters.items()
+            ), 1.0
+        ) for class_number, class_parameters in parameters_by_class.items()
+    }
 
-    for k, v in parameters_by_class.items():
-        probability = functools.reduce(operator.mul, (
-            probability_density(item_to_classify[k1], v1["std_dev"], v1["mean"]) * (
-                len(items_by_class[k]) / len(items)) / probability_density(item_to_classify[k1],
-                                                                           global_params[k1]["std_dev"],
-                                                                           global_params[k1]["mean"]) for k1, v1 in
-            v.items()), 1.0)
-        probabilities_by_class[k] = probability
-        print(probabilities_by_class[k])
-
-    c = max(probabilities_by_class.keys(), key=(lambda key: probabilities_by_class[key]))
-    channel.basic_publish("", publish_queue_name, json.dumps({"classified_class": c}).encode("UTF-8"))
+    best_class = max(probabilities_by_class.keys(), key=(lambda key: probabilities_by_class[key]))
+    channel.basic_publish("", publish_queue_name, json.dumps({"classified_class": best_class}).encode("UTF-8"))
 
     channel.basic_ack(delivery_tag=method_frame.delivery_tag)
 

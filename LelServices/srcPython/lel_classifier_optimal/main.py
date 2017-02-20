@@ -3,15 +3,23 @@ import functools
 import json
 import math
 import operator
-from typing import NamedTuple
+from typing import Sequence, Mapping
 
 import pika
 import pymongo
 
 
-class GaussianParams(NamedTuple):
-    mean: float
-    std_dev: float
+class GaussianParams:
+    def __init__(self, mean: float, std_dev: float):
+        self.mean = mean
+        self.std_dev = std_dev
+
+    def probability_density(self, num: float):
+        fact = self.std_dev * math.sqrt(2.0 * math.pi)
+        expo = (num - self.mean) * (num - self.mean) / (
+            2.0 * self.std_dev * self.std_dev
+        ) if self.std_dev != 0.0 else None
+        return 1.0 if num == self.mean else 0.0 if self.std_dev == 0.0 else math.exp(-expo) / fact
 
 
 client = pymongo.MongoClient('localhost', 8007)
@@ -21,22 +29,16 @@ PUBLISH_QUEUE_NAME = "lel_classified_optimal"
 BANNED_KEYS = {"Configuration", "_id", "Label"}
 
 
-def probability_density(num: float, gaussian_params: GaussianParams):
-    fact = gaussian_params.std_dev * math.sqrt(2.0 * math.pi)
-    expo = (num - gaussian_params.mean) * (num - gaussian_params.mean) / (
-        2.0 * gaussian_params.std_dev * gaussian_params.std_dev
-    ) if gaussian_params.std_dev != 0.0 else None
-    return 1.0 if num == gaussian_params.mean else 0.0 if gaussian_params.std_dev == 0.0 else math.exp(-expo) / fact
-
-
-def calculate_mean_and_std_dev_for_attribute(attribute_name, items):
+def calculate_mean_and_std_dev_for_attribute(attribute_name: str, items: Sequence[Mapping[str, int]]):
     mean = sum(item[attribute_name] for item in items) / len(items)
     return GaussianParams(mean, math.sqrt(
         sum(item[attribute_name] * item[attribute_name] for item in items) / len(items) - mean * mean
     ))
 
 
-def on_message(channel, method_frame, header_frame, body):
+def on_message(channel: pika.adapters.blocking_connection.BlockingChannel, method_frame: pika.spec.Basic.Deliver,
+               header_frame: pika.spec.BasicProperties, body: bytes):
+
     publish_queue_name = header_frame.headers.get("reply_to", PUBLISH_QUEUE_NAME)
     channel.queue_declare(publish_queue_name)
     item_to_classify = json.loads(body.decode("UTF-8"))
@@ -63,9 +65,9 @@ def on_message(channel, method_frame, header_frame, body):
     probabilities_by_class = {
         class_number: functools.reduce(
             operator.mul, (
-                probability_density(item_to_classify[attribute], value) *
+                value.probability_density(item_to_classify[attribute]) *
                 (len(items_by_class[class_number]) / len(items)) /
-                probability_density(item_to_classify[attribute], global_params[attribute])
+                global_params[attribute].probability_density(item_to_classify[attribute])
                 for attribute, value in class_parameters.items()
             ), 1.0
         ) for class_number, class_parameters in parameters_by_class.items()

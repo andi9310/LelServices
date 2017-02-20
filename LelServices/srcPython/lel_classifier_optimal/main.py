@@ -29,10 +29,10 @@ def probability_density(num: float, gaussian_params: GaussianParams):
     return 1.0 if num == gaussian_params.mean else 0.0 if gaussian_params.std_dev == 0.0 else math.exp(-expo) / fact
 
 
-def calculate_mean_and_std_dev_for_attribute(attribute_name, class_items):
-    mean = sum(item[attribute_name] for item in class_items) / len(class_items)
+def calculate_mean_and_std_dev_for_attribute(attribute_name, items):
+    mean = sum(item[attribute_name] for item in items) / len(items)
     return GaussianParams(mean, math.sqrt(
-        sum(item[attribute_name] * item[attribute_name] for item in class_items) / len(class_items) - mean * mean
+        sum(item[attribute_name] * item[attribute_name] for item in items) / len(items) - mean * mean
     ))
 
 

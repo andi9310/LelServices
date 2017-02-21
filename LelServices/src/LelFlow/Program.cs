@@ -1,19 +1,21 @@
 ﻿using LelCommon;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Consul;
+using Microsoft.Extensions.Configuration;
 
 namespace LelFlow
 {
     public class Program
     {
-        private static readonly HttpClient BuildClient = new HttpClient { BaseAddress = new Uri("http://lelbuild/") };
-        private static readonly HttpClient RunnerClient = new HttpClient { BaseAddress = new Uri("http://lelx/") };
+        private static HttpClient _buildClient;
+        private static HttpClient _runnerClient;
         private static readonly Random Generator = new Random();
         public static void Main(string[] args)
         {
@@ -22,7 +24,16 @@ namespace LelFlow
 
         private static async Task Main()
         {
-            using (var client = new ConsulClient(configuration => configuration.Address = new Uri("http://consul:8500")))
+            var builder = new ConfigurationBuilder()
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                       .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+
+            _buildClient = new HttpClient { BaseAddress = new Uri(configuration["lelBuildConnectionString"]) };
+            _runnerClient = new HttpClient { BaseAddress = new Uri(configuration["lelXConnectionString"]) };
+
+            using (var client = new ConsulClient(consulConfig => consulConfig.Address = new Uri(configuration["consulConnectionString"])))
             {
 
                 const string keyName = "lel/lel_flow_lock";
@@ -43,8 +54,8 @@ namespace LelFlow
                     }
                     Console.WriteLine("mam locka");
 
-                    BuildClient.DefaultRequestHeaders.Accept.Clear();
-                    BuildClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    _buildClient.DefaultRequestHeaders.Accept.Clear();
+                    _buildClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     while (true)
                     {
                         ProcessBuild().Wait();
@@ -60,10 +71,10 @@ namespace LelFlow
 
         private static async Task ProcessBuild()
         {
-            var response = await BuildClient.GetAsync($"api/builds/{Generator.Next(100)}/last");
+            var response = await _buildClient.GetAsync($"api/builds/{Generator.Next(100)}/last");
             if (response.IsSuccessStatusCode)
             {
-                await RunnerClient.PostAsJsonAsync("api/tests", AddTestsToBuild(await response.Content.ReadAsAsync<Build>()));
+                await _runnerClient.PostAsJsonAsync("api/tests", AddTestsToBuild(await response.Content.ReadAsAsync<Build>()));
             }
         }
 

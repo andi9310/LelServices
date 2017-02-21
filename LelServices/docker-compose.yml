@@ -2,13 +2,13 @@ version: '3'
 services:
   lelbuild:
     ports:
-      - "80"
+      - "8081:80"
     build:
       context: src/LelBuild
       dockerfile: Dockerfile.prod
   lelapi:
     ports:
-      - "80"
+      - "8082:80"
     depends_on:
       - mssql-server-linux
       - mongo
@@ -65,7 +65,7 @@ services:
       context: src/LelX
       dockerfile: Dockerfile.prod
     ports:
-      - "80"
+      - "8083:80"
     depends_on:
       - rabbitmq
     links:
@@ -78,7 +78,7 @@ services:
   mssql-server-linux:
     image: microsoft/mssql-server-linux
     ports:
-    - "1433"
+    - "8008:1433"
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "Elo_benc1!"
@@ -89,4 +89,4 @@ services:
   consul:
     image: consul
     ports:
-     - "8500"
+     - "8009:8500"

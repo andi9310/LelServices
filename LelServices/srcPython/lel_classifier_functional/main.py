@@ -2,7 +2,6 @@ import collections
 import functools
 import json
 import math
-import operator
 
 import pika
 import pymongo
@@ -32,10 +31,10 @@ def probability_density(num, gaussian_params):
 
 
 def calculate_mean_and_std_dev_for_attribute(attribute_name, items):
-    mean = functools.reduce(operator.add, map(lambda item: item[attribute_name], items)) / len(items)
+    mean = functools.reduce(lambda x, y: x + y, map(lambda item: item[attribute_name], items)) / len(items)
     return GaussianParams(mean, math.sqrt(
         functools.reduce(
-            operator.add,
+            lambda x, y: x + y,
             map(lambda item: item[attribute_name] * item[attribute_name], items)
         ) / len(items) - mean * mean
     ))
@@ -75,7 +74,7 @@ def on_message(channel, method_frame, header_frame, body):
 
     probabilities_by_class = dict(
         map(lambda class_number_and_parameters: (
-            class_number_and_parameters[0], functools.reduce(operator.mul, map(
+            class_number_and_parameters[0], functools.reduce(lambda x, y: x * y, map(
                 lambda attribute_and_value: probability_density(
                     item_to_classify[attribute_and_value[0]], attribute_and_value[1]
                 ) * (len(items_by_class[class_number_and_parameters[0]]) / len(items)) / probability_density(

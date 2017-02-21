@@ -5,15 +5,19 @@ namespace LelCommon
 {
     public class LelContext : DbContext
     {
-        public LelContext(DbContextOptions options)
+        private readonly string _connectionString;
+
+        public LelContext(DbContextOptions options, string connectionString)
             : base(options)
-        { }
+        {
+            _connectionString = connectionString;
+        }
 
         public DbSet<Aggregation> Aggregations { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=mssql;Database=lel_db;User Id=sa;Password=Elo_benc1!; ");
+            optionsBuilder.UseSqlServer(_connectionString);
         }
     }
 

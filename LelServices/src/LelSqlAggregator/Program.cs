@@ -1,8 +1,10 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using LelCommon;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -12,9 +14,16 @@ namespace LelSqlAggregator
     public class Program
     {
         private static IModel _channel;
+        private static string _sqlConnectionString;
         public static void Main(string[] args)
         {
-            var factory = new ConnectionFactory { HostName = "rabbitmq", Port = 5672, UserName = "guest", Password = "guest" };
+            var builder = new ConfigurationBuilder()
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                       .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+            _sqlConnectionString = configuration["sqlConnectionString"];
+            var factory = new ConnectionFactory { HostName = configuration["rabbitmq:address"], Port = int.Parse(configuration["rabbitmq:port"]), UserName = configuration["rabbitmq:user"], Password = configuration["rabbitmq:password"] };
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {
@@ -37,7 +46,7 @@ namespace LelSqlAggregator
         private static void OnMessage(object model, BasicDeliverEventArgs ea)
         {
             var result = JsonConvert.DeserializeObject<Result>(Encoding.UTF8.GetString(ea.Body));
-            using (var context = new LelContext(new DbContextOptions<LelContext>()))
+            using (var context = new LelContext(new DbContextOptions<LelContext>(), _sqlConnectionString))
             {
                 context.Database.EnsureCreated();
 

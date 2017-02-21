@@ -1,5 +1,7 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
 using LelCommon;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -9,12 +11,19 @@ namespace LelMongoAggregator
 {
     public class Program
     {
-        private static readonly IMongoClient MongoClient = new MongoClient("mongodb://mongo:27017/?maxPoolSize=555");
-        private static readonly IMongoDatabase Database = MongoClient.GetDatabase("lel");
+        private static IMongoClient _mongoClient;
+        private static IMongoDatabase _database;
         private static IModel _channel;
         public static void Main(string[] args)
         {
-            var factory = new ConnectionFactory { HostName = "rabbitmq", Port = 5672, UserName = "guest", Password = "guest" };
+            var builder = new ConfigurationBuilder()
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                       .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+            _mongoClient = new MongoClient(configuration["mongoConnectionString"]);
+            _database = _mongoClient.GetDatabase("lel");
+            var factory = new ConnectionFactory { HostName = configuration["rabbitmq:address"], Port = int.Parse(configuration["rabbitmq:port"]), UserName = configuration["rabbitmq:user"], Password = configuration["rabbitmq:password"] };
             using (var connection = factory.CreateConnection())
             using (_channel = connection.CreateModel())
             {
@@ -38,7 +47,7 @@ namespace LelMongoAggregator
         {
             var result = JsonConvert.DeserializeObject<Result>(Encoding.UTF8.GetString(ea.Body));
             var filterBuilder = Builders<MongoAggregation>.Filter;
-            Database.GetCollection<MongoAggregation>("lel_aggregations").FindOneAndUpdate(
+            _database.GetCollection<MongoAggregation>("lel_aggregations").FindOneAndUpdate(
                 filterBuilder.Eq("Label", result.Label) & filterBuilder.Eq("Configuration", result.Configuration),
                 Builders<MongoAggregation>.Update.Inc(result.Status, 1),
                 new FindOneAndUpdateOptions<MongoAggregation, MongoAggregation> { IsUpsert = true });

@@ -3,3 +3,4 @@ ENTRYPOINT ["dotnet", "LelMongoAggregator.dll"]
 ARG source=out
 WORKDIR /app
 COPY $source .
+COPY appsettings.prod.json ./appsettings.json

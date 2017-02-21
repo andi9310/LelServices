@@ -4,3 +4,4 @@ ARG source=out
 WORKDIR /app
 EXPOSE 80
 COPY $source .
+COPY appsettings.prod.json ./appsettings.json

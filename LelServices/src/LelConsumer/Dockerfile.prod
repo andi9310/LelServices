@@ -3,3 +3,4 @@ ENTRYPOINT ["dotnet", "LelConsumer.dll"]
 ARG source=out
 WORKDIR /app
 COPY $source .
+COPY appsettings.prod.json ./appsettings.json

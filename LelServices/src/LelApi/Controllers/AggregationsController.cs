@@ -22,7 +22,7 @@ namespace LelApi.Controllers
         [HttpGet("command/{command}")]
         public Aggregation Get(string command)
         {
-            using (var context = new LelContext(new DbContextOptions<LelContext>()))
+            using (var context = new LelContext(new DbContextOptions<LelContext>(), Program.SqlConnectionString))
             {
                 context.Database.EnsureCreated();
                 return context.Aggregations.FirstOrDefault(agg => agg.Command == command) ?? new Aggregation { Command = command };

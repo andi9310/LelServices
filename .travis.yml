@@ -7,7 +7,7 @@ before_install:
     - sudo apt-get update
 # Install .NET Core
 install:
-    - sudo apt-get -y install sudo apt-get install dotnet-dev-1.0.0-preview2.1-003177
+    - sudo apt-get -y install dotnet-dev-1.0.0-preview2.1-003177
 # # Make sure it is working
 
 script:

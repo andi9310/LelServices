@@ -65,7 +65,7 @@ services:
       context: src/LelX
       dockerfile: Dockerfile.prod
     ports:
-      - "8083:80"
+      - "8084:80"
     depends_on:
       - rabbitmq
     links:
@@ -90,3 +90,12 @@ services:
     image: consul
     ports:
      - "8009:8500"
+  influxdb:
+    image: influxdb
+    ports:
+     - "8080:8083"
+     - "8086:8086"
+  grafana:
+    image: grafana/grafana
+    ports:
+     - "3000:3000"

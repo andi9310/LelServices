@@ -43,8 +43,10 @@ namespace LelFlow
                     SessionName = "lel_lock_session",
                     SessionTTL = TimeSpan.FromSeconds(10)
                 };
+
                 var l = client.CreateLock(lockOptions);
                 await l.Acquire(CancellationToken.None);
+
                 try
                 {
                     if (!l.IsHeld)

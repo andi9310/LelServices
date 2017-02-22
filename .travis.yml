@@ -12,4 +12,4 @@ install:
 
 script:
     - cd LelServices
-	- bash build.sh
+    - bash build.sh
